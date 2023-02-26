@@ -1,7 +1,10 @@
 package com.example.productservice;
 
 import com.example.productservice.dto.ProductRequest;
+import com.example.productservice.dto.ProductResponse;
+import com.example.productservice.repository.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,6 +20,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @SpringBootTest
 @Testcontainers
@@ -29,6 +36,8 @@ class ProductServiceApplicationTests {
     private MockMvc mockMvc;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private ProductRepository productRepository;
 
     @DynamicPropertySource
     static void setProperties(DynamicPropertyRegistry dynamicPropertyRegistry) {
@@ -44,6 +53,37 @@ class ProductServiceApplicationTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(productRequestString))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
+        Assertions.assertEquals(1, productRepository.findAll().size());
+    }
+
+    @Test
+    void shouldGetAllProducts() throws Exception {
+        List<ProductResponse> productResponseList = getProductResponseList();
+        String productResponseString = objectMapper.writeValueAsString(productResponseList);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/product")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(productResponseString))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    private List<ProductResponse> getProductResponseList() {
+        List<ProductResponse> productResponses = new ArrayList<>();
+
+        productResponses.add(ProductResponse.builder()
+                .id("1488")
+                .name("iPhone 13")
+                .description("iPhone 13")
+                .price(BigDecimal.valueOf(1200))
+                .build());
+        productResponses.add(ProductResponse.builder()
+                .id("1337")
+                .name("iPhone 14")
+                .description("iPhone 14")
+                .price(BigDecimal.valueOf(1500))
+                .build());
+        return productResponses;
     }
 
     private ProductRequest getProductRequest() {
